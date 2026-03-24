@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECCIÓN 9 — Cloud-Hub VPN Monitor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg-primary: #060b18;
+    --bg-card: #0d1525;
+    --bg-card-hover: #111d33;
+    --border: #1a2744;
+    --accent: #00d4ff;
+    --accent-dim: #00d4ff22;
+    --green: #4ade80;
+    --green-dim: #4ade8022;
+    --red: #f87171;
+    --red-dim: #f8717122;
+    --yellow: #facc15;
+    --yellow-dim: #facc1522;
+    --text-primary: #e8ecf4;
+    --text-secondary: #7a8baa;
+    --text-dim: #4a5568;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%; left: -20%;
+    width: 80%; height: 80%;
+    background: radial-gradient(ellipse, #00d4ff06 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), #0066ff);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 18px; color: #fff;
+    box-shadow: 0 0 24px #00d4ff33;
+  }
+  .header h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-right {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 #4ade8066; }
+    50% { box-shadow: 0 0 0 6px #4ade8000; }
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .stat-card:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+  .stat-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-secondary); margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-value {
+    font-size: 32px; font-weight: 800; letter-spacing: -1px;
+  }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+  .stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Section title */
+  .section-title {
+    font-size: 14px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-secondary); margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Peers grid */
+  .peers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .peer-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .peer-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px #00000044; }
+  .peer-card.connected { border-color: #4ade8044; }
+  .peer-card.connected::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--green), transparent);
+  }
+  .peer-card.disconnected { border-color: #f8717144; opacity: 0.7; }
+  .peer-card.disconnected::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+  .peer-card.revoked { border-color: #f8717188; opacity: 0.5; }
+  .peer-card.revoked::after {
+    content: 'REVOCADO'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 28px; font-weight: 800; color: #f8717144;
+    letter-spacing: 4px; pointer-events: none;
+  }
+  .peer-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .peer-name { font-size: 16px; font-weight: 700; }
+  .peer-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .peer-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .peer-status.online { background: var(--green-dim); color: var(--green); }
+  .peer-status.offline { background: var(--red-dim); color: var(--red); }
+  .peer-detail {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; border-bottom: 1px solid #ffffff06;
+    font-size: 13px;
+  }
+  .peer-detail-label { color: var(--text-secondary); }
+  .peer-detail-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .peer-actions { margin-top: 16px; display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+  .btn.danger { border-color: #f8717144; color: var(--red); }
+  .btn.danger:hover { background: var(--red-dim); border-color: var(--red); }
+  .btn.success { border-color: #4ade8044; color: var(--green); }
+  .btn.success:hover { background: var(--green-dim); border-color: var(--green); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Demo panel */
+  .demo-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .demo-section h3 {
+    font-size: 14px; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .demo-section h3 .icon {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .demo-section h3 .icon.blue { background: var(--accent-dim); color: var(--accent); }
+  .demo-section h3 .icon.red { background: var(--red-dim); color: var(--red); }
+  .demo-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+
+  /* Log */
+  .log-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .log-entries {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    color: var(--text-secondary);
+  }
+  .log-entry { padding: 4px 0; border-bottom: 1px solid #ffffff04; }
+  .log-entry .ts { color: var(--text-dim); }
+  .log-entry .msg-ok { color: var(--green); }
+  .log-entry .msg-err { color: var(--red); }
+  .log-entry .msg-warn { color: var(--yellow); }
+  .log-entry .msg-info { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .peers-grid { grid-template-columns: 1fr; }
+    .demo-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Connection error banner */
+  .error-banner {
+    background: var(--red-dim);
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--red);
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">S9</div>
+      <h1><span>Cloud-Hub</span> VPN Monitor</h1>
+    </div>
+    <div class="header-right">
+      <div class="pulse-dot" id="pulse"></div>
+      <span id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="errorBanner">
+    ⚠ No se puede conectar con el Hub (API en hub:8080). Verifica que el laboratorio está levantado.
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Peers Totales</div>
+      <div class="stat-value accent" id="statTotal">—</div>
+      <div class="stat-sub">Configurados en el Hub</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Conectados</div>
+      <div class="stat-value green" id="statConnected">—</div>
+      <div class="stat-sub">Con handshake reciente</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Red VPN</div>
+      <div class="stat-value accent" id="statNetwork">—</div>
+      <div class="stat-sub">Dirección del Hub</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Puerto</div>
+      <div class="stat-value accent" id="statPort">—</div>
+      <div class="stat-sub">WireGuard UDP</div>
+    </div>
+  </div>
+
+  <!-- Peers -->
+  <div class="section-title">Dispositivos Conectados</div>
+  <div class="peers-grid" id="peersGrid">
+    <div class="peer-card">
+      <div class="peer-header">
+        <div><div class="peer-name">Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Panel -->
+  <div class="section-title">Panel de Demostración</div>
+  <div class="demo-panel">
+    <div class="demo-grid">
+      <div class="demo-section">
+        <h3><span class="icon blue">🛡</span> Segmentación de Red</h3>
+        <p class="demo-desc">
+          Bloquea o permite el tráfico entre peers específicos. Simula las reglas de firewall que se configurarían en OPNsense.
+        </p>
+        <button class="btn danger" onclick="demoBlock('spoke-02', '10.10.1.20', '10.10.1.100')">
+          Bloquear Oficina → Servidor
+        </button>
+        <br><br>
+        <button class="btn success" onclick="demoUnblock('spoke-02', '10.10.1.20', '10.10.1.100')">
+          Restaurar acceso
+        </button>
+      </div>
+      <div class="demo-section">
+        <h3><span class="icon red">🔑</span> Revocación de Acceso</h3>
+        <p class="demo-desc">
+          Simula que un empleado pierde su dispositivo. Se revoca su peer del Hub y pierde toda conectividad VPN al instante.
+        </p>
+        <button class="btn danger" onclick="demoRevoke('spoke-01')">
+          Revocar Empleado Remoto
+        </button>
+        <br><br>
+        <button class="btn success" onclick="demoRestore('spoke-01')">
+          Restaurar acceso
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="section-title">Registro de Actividad</div>
+  <div class="log-panel">
+    <div class="log-entries" id="logEntries">
+      <div class="log-entry"><span class="ts">[--:--:--]</span> <span class="msg-info">Dashboard iniciado. Esperando datos del Hub...</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  CONFIG — Ajustar HUB_API si se accede desde fuera
+  // ============================================================
+  // Desde el contenedor dashboard dentro de Containerlab, el Hub
+  // es accesible por su nombre DNS: clab-cloudhub-vpn-hub
+  // Si se accede desde el navegador del HOST, usar la IP del Hub
+  // en la red de management de Containerlab.
+  
+  // Intentamos detectar automáticamente
+  const HUB_CANDIDATES = [
+    'http://clab-cloudhub-vpn-hub:8080',  // Desde dentro de Docker
+    'http://172.20.20.10:8080',           // Desde el host (management IP)
+    'http://localhost:8080',              // Fallback
+  ];
+  
+  let HUB_API = HUB_CANDIDATES[1]; // Default: desde el host
+  let connected = false;
+
+  // State
+  let peerData = [];
+  let revokedPeers = new Set();
+  let blockedRules = [];
+
+  // ============================================================
+  //  CLOCK
+  // ============================================================
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ============================================================
+  //  LOGGING
+  // ============================================================
+  function log(msg, type = 'info') {
+    const ts = new Date().toLocaleTimeString('es-ES');
+    const el = document.getElementById('logEntries');
+    const cls = { ok: 'msg-ok', err: 'msg-err', warn: 'msg-warn', info: 'msg-info' }[type] || 'msg-info';
+    el.innerHTML += `<div class="log-entry"><span class="ts">[${ts}]</span> <span class="${cls}">${msg}</span></div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ============================================================
+  //  API POLLING
+  // ============================================================
+  async function fetchStatus() {
+    try {
+      const res = await fetch(HUB_API + '/api/status', { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      connected = true;
+      document.getElementById('errorBanner').style.display = 'none';
+      document.getElementById('pulse').style.background = 'var(--green)';
+      updateUI(data);
+    } catch (e) {
+      connected = false;
+      document.getElementById('errorBanner').style.display = 'block';
+      document.getElementById('pulse').style.background = 'var(--red)';
+    }
+  }
+
+  function updateUI(data) {
+    // Stats
+    document.getElementById('statTotal').textContent = data.peer_count || 0;
+    const connectedCount = (data.peers || []).filter(p => p.status === 'conectado').length;
+    document.getElementById('statConnected').textContent = connectedCount;
+    document.getElementById('statNetwork').textContent = data.hub_ip || '—';
+    document.getElementById('statPort').textContent = data.listen_port || '—';
+
+    peerData = data.peers || [];
+
+    // Peers grid
+    const grid = document.getElementById('peersGrid');
+    if (peerData.length === 0) {
+      grid.innerHTML = '<div class="peer-card"><div class="peer-header"><div><div class="peer-name">Sin peers configurados</div></div></div></div>';
+      return;
+    }
+
+    grid.innerHTML = peerData.map(p => {
+      const isRevoked = revokedPeers.has(p.node_id);
+      const isBlocked = blockedRules.some(r => r.src === p.allowed_ips?.replace('/32',''));
+      const statusClass = isRevoked ? 'revoked' : (p.status === 'conectado' ? 'connected' : 'disconnected');
+      const statusLabel = isRevoked ? 'revocado' : p.status;
+      const statusBadge = isRevoked ? 'offline' : (p.status === 'conectado' ? 'online' : 'offline');
+
+      const rx = formatBytes(p.rx_bytes || 0);
+      const tx = formatBytes(p.tx_bytes || 0);
+      const handshake = p.last_handshake_secs_ago != null ? `hace ${p.last_handshake_secs_ago}s` : 'nunca';
+
+      return `
+        <div class="peer-card ${statusClass}">
+          <div class="peer-header">
+            <div>
+              <div class="peer-name">${p.name}</div>
+              <div class="peer-id">${p.node_id}</div>
+            </div>
+            <span class="peer-status ${statusBadge}">${statusLabel}</span>
+          </div>
+          <div class="peer-detail">
+            <span class="peer-detail-label">IP VPN</span>
+            <span class="peer-detail-value">${p.allowed_ips}</span>
+          </div>
+          <div class="peer-detail">
+            <span class="peer-detail-label">Endpoint</span>
+            <span class="peer-detail-value">${p.endpoint}</span>
+          </div>
+          <div class="peer-detail">
+            <span class="peer-detail-label">Último handshake</span>
+            <span class="peer-detail-value">${handshake}</span>
+          </div>
+          <div class="peer-detail">
+            <span class="peer-detail-label">Tráfico</span>
+            <span class="peer-detail-value">↓ ${rx} / ↑ ${tx}</span>
+          </div>
+          ${isBlocked ? '<div style="margin-top:8px;font-size:11px;color:var(--yellow);font-family:JetBrains Mono,monospace;">⚠ SEGMENTADO — Acceso al servidor bloqueado</div>' : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+
+  // ============================================================
+  //  DEMO ACTIONS (visual + instructions)
+  // ============================================================
+  function demoBlock(nodeId, srcIP, dstIP) {
+    blockedRules.push({ src: srcIP, dst: dstIP, node: nodeId });
+    log(`SEGMENTACIÓN: Bloqueado tráfico ${srcIP} → ${dstIP}`, 'warn');
+    log(`Comando ejecutado en Hub: iptables -I FORWARD -s ${srcIP} -d ${dstIP} -j DROP`, 'info');
+    log(`Para verificar: docker exec clab-cloudhub-vpn-${nodeId} ping -c 2 -W 2 ${dstIP}`, 'info');
+    fetchStatus();
+  }
+
+  function demoUnblock(nodeId, srcIP, dstIP) {
+    blockedRules = blockedRules.filter(r => !(r.src === srcIP && r.dst === dstIP));
+    log(`RESTAURADO: Tráfico ${srcIP} → ${dstIP} permitido de nuevo`, 'ok');
+    log(`Comando ejecutado en Hub: iptables -D FORWARD -s ${srcIP} -d ${dstIP} -j DROP`, 'info');
+    fetchStatus();
+  }
+
+  function demoRevoke(nodeId) {
+    revokedPeers.add(nodeId);
+    log(`REVOCACIÓN: Peer ${nodeId} eliminado del Hub. Sin acceso VPN.`, 'err');
+    log(`Comando: docker exec clab-cloudhub-vpn-hub wg set wg0 peer <pubkey> remove`, 'info');
+    log(`Para verificar: docker exec clab-cloudhub-vpn-${nodeId} ping -c 2 -W 2 10.10.1.1`, 'info');
+    fetchStatus();
+  }
+
+  function demoRestore(nodeId) {
+    revokedPeers.delete(nodeId);
+    log(`RESTAURADO: Peer ${nodeId} re-añadido al Hub. Acceso VPN restaurado.`, 'ok');
+    log(`Comando: docker exec clab-cloudhub-vpn-hub wg set wg0 peer <pubkey> allowed-ips <ip>`, 'info');
+    fetchStatus();
+  }
+
+  // ============================================================
+  //  AUTO-DETECT HUB API
+  // ============================================================
+  async function detectHub() {
+    for (const url of HUB_CANDIDATES) {
+      try {
+        const res = await fetch(url + '/api/health', { signal: AbortSignal.timeout(2000) });
+        if (res.ok) {
+          HUB_API = url;
+          log(`Hub detectado en ${url}`, 'ok');
+          return;
+        }
+      } catch (e) { /* try next */ }
+    }
+    log('No se pudo detectar el Hub. Usando fallback. Asegúrate de que el lab está levantado.', 'warn');
+  }
+
+  // ============================================================
+  //  INIT
+  // ============================================================
+  (async () => {
+    await detectHub();
+    fetchStatus();
+    setInterval(fetchStatus, 5000); // Poll cada 5s
+  })();
+</script>
+
+</body>
+</html>
