@@ -66,7 +66,7 @@ Documentación de la infraestructura VPN basada en WireGuard desplegada en VPS I
         | túnel WireGuard (UDP 51820)
         |
 [VPS Ionos - Ubuntu 22.04]
-  IP pública: 212.227.104.109
+  IP pública: X.X.X.109
   IP VPN:     10.0.0.1/24
         |
         | iptables MASQUERADE
@@ -78,8 +78,8 @@ Documentación de la infraestructura VPN basada en WireGuard desplegada en VPS I
 
 | Peer | IP VPN | Clave pública |
 |------|--------|---------------|
-| Cliente 1 (moham) | 10.0.0.2/32 | `CMvCw4gSxdv5xwkgx+kUlBQ6uRWKx4ujDJQGMzwiPxA=` |
-| Cliente 2 | 10.0.0.3/32 | `f0xuJ56py14WlgUKviQMLkLtNuOiTP+dIZmW3LGK1U4=` |
+| Cliente 1 (moham) | 10.0.0.2/32 | `PxA=` |
+| Cliente 2 | 10.0.0.3/32 | `` |
 
 ---
 
@@ -89,7 +89,7 @@ Documentación de la infraestructura VPN basada en WireGuard desplegada en VPS I
 |-----------|-------|
 | SO | Ubuntu 22.04.5 LTS (jammy) |
 | Kernel | 5.15.0-173-generic |
-| IP pública | 212.227.104.109 |
+| IP pública | X.X.X.109 |
 | Proveedor | Ionos (pbiaas) |
 | Interfaz red | ens6 |
 | Puerto WireGuard | UDP 51820 |
@@ -114,12 +114,12 @@ PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; \
 
 # Cliente 1
 [Peer]
-PublicKey = CMvCw4gSxdv5xwkgx+kUlBQ6uRWKx4ujDJQGMzwiPxA=
+PublicKey = <CLAVE_PRIVADA>
 AllowedIPs = 10.0.0.2/32
 
 # Cliente 2
 [Peer]
-PublicKey = f0xuJ56py14WlgUKviQMLkLtNuOiTP+dIZmW3LGK1U4=
+PublicKey = <CLAVE_PUBLICA>
 AllowedIPs = 10.0.0.3/32
 ```
 
@@ -134,7 +134,7 @@ Address = 10.0.0.X/24
 DNS = 8.8.8.8
 
 [Peer]
-PublicKey = CuUkQtakWxeTPRrAPIJ3kB6zXnzGu8KA6YNoVNLKAg0=
+PublicKey = <CLAVE_PUBLICA>
 Endpoint = 212.227.104.109:51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
