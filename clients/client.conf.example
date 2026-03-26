@@ -1,0 +1,10 @@
+[Interface]
+PrivateKey = <TU_CLAVE_PRIVADA_CLIENTE>
+Address = 10.0.0.X/24
+DNS = 8.8.8.8
+
+[Peer]
+PublicKey = <CLAVE_PUBLICA_DEL_SERVIDOR>
+Endpoint = <IP_VPS>:51820
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25

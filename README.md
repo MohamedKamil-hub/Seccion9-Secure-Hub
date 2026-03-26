@@ -17,6 +17,7 @@ Solución de conectividad segura basada en **WireGuard** y **OpenVPN** para empr
                                     [Servidor IT]         [Servidor Web]
 ```
 
+
 ![Diagrama de Arquitectura](./fotos/image.png)
 
 
@@ -109,4 +110,5 @@ Ver [`docs/troubleshooting.md`](docs/troubleshooting.md) para el checklist compl
 
 ---
 
-> **Seccion9** — Conectividad segura para empresas
+> **Seccion9** — Conectividad segura para empresas.
+> info@seccion9.com | 902 99 64 09
