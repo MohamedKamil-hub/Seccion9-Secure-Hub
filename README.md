@@ -51,3 +51,212 @@ Este proyecto es de Seccion9. Si tienes alguna pregunta o sugerencia, por favor 
 ---
 
 **Seccion9 - Conectividad Segura y Avanzada.**
+
+# SECCION9 — VPN WireGuard Server
+
+Documentación de la infraestructura VPN basada en WireGuard desplegada en VPS Ionos para el proyecto SECCION9.
+
+---
+
+## Arquitectura
+
+```
+[Cliente Windows/Linux]
+        |
+        | túnel WireGuard (UDP 51820)
+        |
+[VPS Ionos - Ubuntu 22.04]
+  IP pública: 212.227.104.109
+  IP VPN:     10.0.0.1/24
+        |
+        | iptables MASQUERADE
+        |
+  [Internet / Red interna]
+```
+
+### Peers registrados
+
+| Peer | IP VPN | Clave pública |
+|------|--------|---------------|
+| Cliente 1 (moham) | 10.0.0.2/32 | `CMvCw4gSxdv5xwkgx+kUlBQ6uRWKx4ujDJQGMzwiPxA=` |
+| Cliente 2 | 10.0.0.3/32 | `f0xuJ56py14WlgUKviQMLkLtNuOiTP+dIZmW3LGK1U4=` |
+
+---
+
+## Servidor
+
+| Parámetro | Valor |
+|-----------|-------|
+| SO | Ubuntu 22.04.5 LTS (jammy) |
+| Kernel | 5.15.0-173-generic |
+| IP pública | 212.227.104.109 |
+| Proveedor | Ionos (pbiaas) |
+| Interfaz red | ens6 |
+| Puerto WireGuard | UDP 51820 |
+
+---
+
+## Configuración del servidor `/etc/wireguard/wg0.conf`
+
+```ini
+[Interface]
+Address = 10.0.0.1/24
+ListenPort = 51820
+PrivateKey = <OCULTA — ver gestor de contraseñas>
+
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; \
+         iptables -A FORWARD -o wg0 -j ACCEPT; \
+         iptables -t nat -A POSTROUTING -o ens6 -j MASQUERADE
+
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; \
+           iptables -D FORWARD -o wg0 -j ACCEPT; \
+           iptables -t nat -D POSTROUTING -o ens6 -j MASQUERADE
+
+# Cliente 1
+[Peer]
+PublicKey = CMvCw4gSxdv5xwkgx+kUlBQ6uRWKx4ujDJQGMzwiPxA=
+AllowedIPs = 10.0.0.2/32
+
+# Cliente 2
+[Peer]
+PublicKey = f0xuJ56py14WlgUKviQMLkLtNuOiTP+dIZmW3LGK1U4=
+AllowedIPs = 10.0.0.3/32
+```
+
+---
+
+## Configuración del cliente (Windows/Linux)
+
+```ini
+[Interface]
+PrivateKey = <CLAVE_PRIVADA_DEL_CLIENTE>
+Address = 10.0.0.X/24
+DNS = 8.8.8.8
+
+[Peer]
+PublicKey = CuUkQtakWxeTPRrAPIJ3kB6zXnzGu8KA6YNoVNLKAg0=
+Endpoint = 212.227.104.109:51820
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
+```
+
+> Sustituir `10.0.0.X` por la IP asignada al cliente (ver tabla de peers).
+
+### Generar par de claves (Linux)
+```bash
+wg genkey | tee privatekey | wg pubkey > publickey
+cat privatekey
+cat publickey
+```
+
+### Generar par de claves (Windows PowerShell)
+```powershell
+cd "C:\Program Files\WireGuard"
+wg.exe genkey > private.key
+wg.exe pubkey < private.key > public.key
+Get-Content private.key
+Get-Content public.key
+```
+
+---
+
+## Firewall UFW
+
+```
+Default: deny (incoming), allow (outgoing), deny (routed)
+
+22/tcp     ALLOW IN   (SSH)
+80/tcp     ALLOW IN   (HTTP)
+443/tcp    ALLOW IN   (HTTPS)
+8001:8050  ALLOW IN   (servicios internos)
+51820/udp  ALLOW IN   (WireGuard)
+```
+
+### ⚠️ Firewall externo Ionos
+Ionos tiene un firewall a nivel de red **por encima del UFW** que hay que configurar desde el panel web.
+Reglas necesarias en el panel Ionos:
+
+| Protocolo | Puerto | Origen | Acción |
+|-----------|--------|--------|--------|
+| UDP | 51820 | 0.0.0.0/0 | Allow |
+| TCP | 22 | 0.0.0.0/0 | Allow |
+| ICMP | — | 0.0.0.0/0 | Allow |
+
+---
+
+## Comandos de mantenimiento
+
+### Ver estado del túnel
+```bash
+sudo wg show
+```
+
+### Añadir nuevo cliente
+```bash
+# En el servidor
+sudo wg set wg0 peer <CLAVE_PUBLICA_CLIENTE> allowed-ips 10.0.0.X/32
+sudo wg-quick save wg0
+```
+
+### Eliminar cliente
+```bash
+sudo wg set wg0 peer <CLAVE_PUBLICA_CLIENTE> remove
+sudo wg-quick save wg0
+```
+
+### Reiniciar WireGuard
+```bash
+sudo wg-quick down wg0
+sudo wg-quick up wg0
+```
+
+### Activar inicio automático
+```bash
+sudo systemctl enable wg-quick@wg0
+sudo systemctl start wg-quick@wg0
+```
+
+### Ver logs del servicio
+```bash
+sudo journalctl -u wg-quick@wg0 -f
+```
+
+---
+
+## Troubleshooting
+
+### Handshake no completa
+1. Verificar que el puerto 51820/udp está abierto en UFW: `sudo ufw status`
+2. **Verificar firewall externo de Ionos** (causa más común) — abrir UDP 51820 desde el panel web
+3. Verificar que el cliente usa la clave privada correcta
+4. Capturar tráfico entrante: `sudo tcpdump -i ens6 udp port 51820`
+5. Verificar que la clave pública del cliente está registrada: `sudo wg show`
+
+### Verificar que las claves del cliente son correctas
+```bash
+# En el servidor, verificar que la privada genera la pública esperada
+echo "<CLAVE_PRIVADA>" | wg pubkey
+```
+
+### El cliente no tiene internet a través del túnel
+```bash
+# Verificar que IP forwarding está activo
+cat /proc/sys/net/ipv4/ip_forward
+# Si devuelve 0, activarlo:
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+```
+
+---
+
+## Red interna
+
+| Interfaz | IP | Descripción |
+|----------|----|-------------|
+| ens6 | 212.227.104.109/32 | IP pública Ionos |
+| wg0 | 10.0.0.1/24 | Túnel WireGuard |
+| docker0 | 172.17.0.1/16 | Red Docker (inactiva) |
+
+---
+
+*Documento generado para uso interno de SECCION9 — no compartir claves privadas en repositorios públicos.*
