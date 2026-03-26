@@ -67,9 +67,92 @@ sudo bash clients/setup-linux.sh
 
 ---
 
+## Gestión de clientes con wg-manager.sh
+
+El script `wg-manager.sh` centraliza toda la gestión de clientes VPN desde el servidor. Genera claves, asigna IPs automáticamente y crea los archivos `.conf` listos para enviar al cliente.
+
+### Instalación
+
+```bash
+# Copiar al servidor
+scp wg-manager.sh root@TU_IP_VPS:/root/wg-manager.sh
+
+# En el servidor: editar las variables de configuración
+nano /root/wg-manager.sh
+# → Cambiar SERVER_IP y SERVER_PUBKEY por los valores reales
+
+# Dar permisos y ejecutar
+chmod +x /root/wg-manager.sh
+sudo ./wg-manager.sh
+```
+
+### Menú principal
+
+```
+╔══════════════════════════════════════╗
+║   SECCION9 — WireGuard Manager      ║
+╠══════════════════════════════════════╣
+║  1) Añadir cliente                   ║
+║  2) Eliminar cliente                 ║
+║  3) Listar clientes y estado         ║
+║  4) Ver config de un cliente         ║
+║  5) Estado del servidor              ║
+║  6) Salir                            ║
+╚══════════════════════════════════════╝
+```
+
+### Funcionalidades
+
+| Opción | Descripción |
+|---|---|
+| **1) Añadir cliente** | Genera claves automáticamente, asigna la siguiente IP libre, crea el `.conf` completo listo para enviar |
+| **2) Eliminar cliente** | Revoca el acceso VPN, elimina el peer y borra su `.conf` |
+| **3) Listar clientes** | Muestra todos los peers con IP y estado (conectado / inactivo / sin conexión) |
+| **4) Ver config** | Muestra el `.conf` de un cliente para reenviárselo |
+| **5) Estado del servidor** | Diagnóstico rápido: servicio, IP forwarding, UFW, peers, `wg show` |
+
+Los archivos `.conf` de cada cliente se guardan en `/etc/wireguard/clientes/`.
+Las acciones quedan registradas en `/var/log/seccion9-vpn.log`.
+
+### Ejemplo de uso: añadir un cliente
+
+```bash
+sudo ./wg-manager.sh
+# → Opción 1
+# → Nombre: oficina-bcn
+# → El script genera todo automáticamente y muestra el .conf
+```
+
+Salida:
+
+```
+[*] Registrando cliente: oficina-bcn
+    IP asignada:    10.0.0.2
+    Clave pública:  abc123...=
+
+[+] Cliente 'oficina-bcn' registrado correctamente.
+
+  ARCHIVO .conf PARA ENVIAR AL CLIENTE
+  [Interface]
+  PrivateKey = xyz789...
+  Address = 10.0.0.2/24
+  DNS = 8.8.8.8
+
+  [Peer]
+  PublicKey = TU_CLAVE_PUBLICA_SERVIDOR
+  AllowedIPs = 0.0.0.0/0
+  Endpoint = TU_IP_VPS:51820
+  PersistentKeepalive = 25
+```
+
+> **Nota:** El método manual con `add-client.sh` sigue disponible para casos donde el cliente genera sus propias claves.
+
+---
+
 ## Estructura del repositorio
 
 ```
+├── wg-manager.sh               # Gestión centralizada de clientes VPN
 ├── server/
 │   └── install-server.sh       # Instala WireGuard en el VPS desde cero
 ├── clients/
@@ -111,4 +194,4 @@ Ver [`docs/troubleshooting.md`](docs/troubleshooting.md) para el checklist compl
 ---
 
 > **Seccion9** — Conectividad segura para empresas.
-> info@seccion9.com | 902 99 64 09
+> info@seccion9.com | 123 456 789
