@@ -2,13 +2,13 @@
 
 ¡Bienvenido al repositorio de **Seccion9 Hybrid VPN Gateway**! Este proyecto implementa una solución de conectividad segura y flexible, diseñada para proteger el acceso a servicios internos y aplicaciones web, con un enfoque especial en la adaptabilidad para empresas en España que manejan diversas infraestructuras de cliente.
 
-## 🚀 Visión General del Proyecto
+##  Visión General del Proyecto
 
 Seccion9 Hybrid VPN Gateway actúa como un **punto de entrada seguro y orquestado**, garantizando que el tráfico de los usuarios sea inspeccionado y protegido antes de llegar a los recursos internos. Proporciona una solución robusta para el teletrabajo, el acceso a recursos críticos y la protección de aplicaciones web contra amenazas comunes.
 
 Hemos diseñado este sistema para ser versátil, combinando la alta eficiencia de **WireGuard** con la amplia compatibilidad de **OpenVPN**, permitiendo a nuestros clientes elegir el protocolo que mejor se adapte a su infraestructura existente (ya sea un OPNsense moderno o un firewall corporativo más tradicional).
 
-## 📊 Arquitectura del Sistema
+##  Arquitectura del Sistema
 
 El siguiente diagrama ilustra la arquitectura de la solución, destacando el flujo de tráfico desde los usuarios finales hasta las aplicaciones protegidas, pasando por nuestro **VPN/VPS central** y un **WAF** dedicado.
 
@@ -23,7 +23,7 @@ El siguiente diagrama ilustra la arquitectura de la solución, destacando el flu
 * **WAF (Web Application Firewall):** Un componente crucial que inspecciona, filtra y bloquea el tráfico HTTP/S malicioso (ej. inyección SQL, XSS) *antes* de que llegue a la aplicación web, protegiendo contra ataques a la capa de aplicación.
 * **Aplicación Web:** La aplicación o servicio web que se desea proteger y hacer accesible de forma segura.
 
-## ✨ Características Principales
+## Características Principales
 
 * **Soporte Híbrido de VPN:** Integración de **WireGuard** para conexiones de alta velocidad y baja latencia, y **OpenVPN** para máxima compatibilidad con una amplia gama de dispositivos y firewalls (incluyendo OPNsense, pfSense y soluciones empresariales).
 * **Seguridad por Capas:** Protección robusta con un firewall de red tradicional y un WAF específico para aplicaciones web.
@@ -31,7 +31,7 @@ El siguiente diagrama ilustra la arquitectura de la solución, destacando el flu
 * **Optimización de Recursos:** Diseño pensado para maximizar el rendimiento en el VPS central, incluso con WAF activos, gracias a la eficiencia de WireGuard.
 * **Facilidad de Gestión:** Una configuración centralizada que permite administrar las políticas de acceso y seguridad desde un único punto.
 
-## 🛠️ Tecnologías Utilizadas (Ejemplos)
+##  Tecnologías Utilizadas (Ejemplos)
 
 * **VPN:** WireGuard, OpenVPN
 * **Sistema Operativo del VPS:** Debian, Ubuntu Server
@@ -40,11 +40,11 @@ El siguiente diagrama ilustra la arquitectura de la solución, destacando el flu
 * **Gestión de Certificados (OpenVPN):** Easy-RSA
 * **Orquestación/Contenedores (Opcional):** Docker, Docker Compose
 
-## 🚀 Primeros Pasos (Próximamente)
+## Primeros Pasos (Próximamente)
 
 Se añadirán guías detalladas sobre cómo desplegar cada componente, configurar los clientes (Laptops y Firewalls), y mantener la solución.
 
-## 🤝 Contribuciones
+## Contribuciones
 
 Este proyecto es de Seccion9. Si tienes alguna pregunta o sugerencia, por favor abre un 'issue'.
 
