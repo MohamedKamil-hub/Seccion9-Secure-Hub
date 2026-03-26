@@ -1,10 +1,10 @@
-# Seccion9 Hybrid VPN Gateway
+# Seccion9 VPN
 
-¡Bienvenido al repositorio de **Seccion9 Hybrid VPN Gateway**! Este proyecto implementa una solución de conectividad segura y flexible, diseñada para proteger el acceso a servicios internos y aplicaciones web, con un enfoque especial en la adaptabilidad para empresas en España que manejan diversas infraestructuras de cliente.
+¡Bienvenido al repositorio de **Seccion9  VPN **! Este proyecto implementa una solución de conectividad segura y flexible, diseñada para proteger el acceso a servicios internos y aplicaciones web, con un enfoque especial en la adaptabilidad para empresas en España que manejan diversas infraestructuras de cliente.
 
 ##  Visión General del Proyecto
 
-Seccion9 Hybrid VPN Gateway actúa como un **punto de entrada seguro y orquestado**, garantizando que el tráfico de los usuarios sea inspeccionado y protegido antes de llegar a los recursos internos. Proporciona una solución robusta para el teletrabajo, el acceso a recursos críticos y la protección de aplicaciones web contra amenazas comunes.
+ actúa como un **punto de entrada seguro y orquestado**, garantizando que el tráfico de los usuarios sea inspeccionado y protegido antes de llegar a los recursos internos. Proporciona una solución robusta para el teletrabajo, el acceso a recursos críticos y la protección de aplicaciones web contra amenazas comunes.
 
 Hemos diseñado este sistema para ser versátil, combinando la alta eficiencia de **WireGuard** con la amplia compatibilidad de **OpenVPN**, permitiendo a nuestros clientes elegir el protocolo que mejor se adapte a su infraestructura existente (ya sea un OPNsense moderno o un firewall corporativo más tradicional).
 
