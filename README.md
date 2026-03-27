@@ -47,46 +47,103 @@ Solución de conectividad segura basada en **WireGuard** y **OpenVPN** para empr
 sudo bash server/install-server.sh
 ```
 
-### 2. Añadir un cliente nuevo
+### 2. Desplegar el panel de gestión
+```bash
+cd panel/
+# Editar docker-compose.yml con tus valores reales
+nano docker-compose.yml
+sudo bash deploy.sh
+```
+Panel accesible en `http://TU_IP:8443`
+
+### 3. Añadir un cliente (tres opciones)
+
+**Opción A — Desde el panel web (recomendado):**
+
+Accede al panel → Añadir cliente → Descargar `.conf` → Enviar al cliente
+
+**Opción B — Desde terminal:**
 ```bash
 sudo bash onboarding/add-client.sh <nombre> <clave_publica> <ip_asignada>
-# Ejemplo:
-sudo bash onboarding/add-client.sh moham CMvCw4g...= 10.0.0.2
 ```
 
-### 3. Configurar cliente Windows
+**Opción C — Con el script interactivo:**
+```bash
+sudo ./wg-manager.sh
+```
+
+### 4. Configurar cliente Windows
 ```powershell
 # Ejecutar como Administrador en PowerShell
 .\clients\setup-windows.ps1 -ClientAddress "10.0.0.2"
 ```
+O importar el `.conf` descargado del panel directamente en la GUI de WireGuard.
 
-### 4. Configurar cliente Linux
+### 5. Configurar cliente Linux
 ```bash
 sudo bash clients/setup-linux.sh
 ```
+O copiar el `.conf` del panel a `/etc/wireguard/` y ejecutar `sudo wg-quick up seccion9`.
 
 ---
 
-## Gestión de clientes con wg-manager.sh
+## Panel de gestión web
 
-El script `wg-manager.sh` centraliza toda la gestión de clientes VPN desde el servidor. Genera claves, asigna IPs automáticamente y crea los archivos `.conf` listos para enviar al cliente.
+Dashboard web para gestionar la VPN sin necesidad de terminal. Backend en Python (FastAPI) + Frontend en React, desplegado con Docker.
 
-### Instalación
+### Funcionalidades
+
+| Función | Descripción |
+|---|---|
+| **Añadir cliente** | Genera claves, asigna IP automáticamente, crea `.conf` y código QR |
+| **Eliminar cliente** | Revoca acceso VPN inmediatamente |
+| **Listar clientes** | Muestra peers con IP, estado en tiempo real (conectado / inactivo / sin conexión) |
+| **Descargar config** | Descarga `.conf` o escanea QR desde el panel |
+| **Estado del servidor** | Diagnóstico: servicio WireGuard, IP forwarding, UFW, peers conectados |
+
+### Despliegue
 
 ```bash
-# Copiar al servidor
-scp wg-manager.sh root@TU_IP_VPS:/root/wg-manager.sh
+cd panel/
 
-# En el servidor: editar las variables de configuración
-nano /root/wg-manager.sh
-# → Cambiar SERVER_IP y SERVER_PUBKEY por los valores reales
+# 1. Configurar variables en docker-compose.yml
+#    - ADMIN_USER / ADMIN_PASSWORD → credenciales del panel
+#    - SECRET_KEY → clave para JWT (cadena larga y aleatoria)
+#    - SERVER_PUBLIC_IP → IP pública del VPS
+#    - SERVER_PUBLIC_KEY → clave pública de WireGuard (sudo wg show wg0 public-key)
+nano docker-compose.yml
 
-# Dar permisos y ejecutar
-chmod +x /root/wg-manager.sh
-sudo ./wg-manager.sh
+# 2. Desplegar
+sudo bash deploy.sh
 ```
 
-### Menú principal
+### API REST
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/auth/login` | Login, devuelve token JWT |
+| GET | `/api/clients` | Lista clientes con estado |
+| POST | `/api/clients` | Añade cliente nuevo |
+| DELETE | `/api/clients/{name}` | Elimina cliente |
+| GET | `/api/clients/{name}/config` | Devuelve el `.conf` |
+| GET | `/api/clients/{name}/qr` | QR para móvil (imagen PNG) |
+| GET | `/api/server/status` | Estado del servidor |
+
+Documentación interactiva en `http://TU_IP:8443/api/docs`
+
+---
+
+## Gestión por terminal con wg-manager.sh
+
+El script `wg-manager.sh` ofrece las mismas funciones que el panel pero desde terminal. Útil para administración directa por SSH.
+
+```bash
+# Copiar al servidor y configurar
+scp wg-manager.sh root@TU_IP_VPS:/root/wg-manager.sh
+chmod +x /root/wg-manager.sh
+nano /root/wg-manager.sh   # → Cambiar SERVER_IP y SERVER_PUBKEY
+sudo ./wg-manager.sh
+```
 
 ```
 ╔══════════════════════════════════════╗
@@ -101,67 +158,38 @@ sudo ./wg-manager.sh
 ╚══════════════════════════════════════╝
 ```
 
-### Funcionalidades
-
-| Opción | Descripción |
-|---|---|
-| **1) Añadir cliente** | Genera claves automáticamente, asigna la siguiente IP libre, crea el `.conf` completo listo para enviar |
-| **2) Eliminar cliente** | Revoca el acceso VPN, elimina el peer y borra su `.conf` |
-| **3) Listar clientes** | Muestra todos los peers con IP y estado (conectado / inactivo / sin conexión) |
-| **4) Ver config** | Muestra el `.conf` de un cliente para reenviárselo |
-| **5) Estado del servidor** | Diagnóstico rápido: servicio, IP forwarding, UFW, peers, `wg show` |
-
-Los archivos `.conf` de cada cliente se guardan en `/etc/wireguard/clientes/`.
-Las acciones quedan registradas en `/var/log/seccion9-vpn.log`.
-
-### Ejemplo de uso: añadir un cliente
-
-```bash
-sudo ./wg-manager.sh
-# → Opción 1
-# → Nombre: oficina-bcn
-# → El script genera todo automáticamente y muestra el .conf
-```
-
-Salida:
-
-```
-[*] Registrando cliente: oficina-bcn
-    IP asignada:    10.0.0.2
-    Clave pública:  abc123...=
-
-[+] Cliente 'oficina-bcn' registrado correctamente.
-
-  ARCHIVO .conf PARA ENVIAR AL CLIENTE
-  [Interface]
-  PrivateKey = xyz789...
-  Address = 10.0.0.2/24
-  DNS = 8.8.8.8
-
-  [Peer]
-  PublicKey = TU_CLAVE_PUBLICA_SERVIDOR
-  AllowedIPs = 0.0.0.0/0
-  Endpoint = TU_IP_VPS:51820
-  PersistentKeepalive = 25
-```
-
-> **Nota:** El método manual con `add-client.sh` sigue disponible para casos donde el cliente genera sus propias claves.
-
 ---
 
 ## Estructura del repositorio
 
 ```
-├── wg-manager.sh               # Gestión centralizada de clientes VPN
+├── README.md
+├── wg-manager.sh                   # Gestión de clientes por terminal
 ├── server/
-│   └── install-server.sh       # Instala WireGuard en el VPS desde cero
+│   ├── install-server.sh           # Instala WireGuard en el VPS
+│   └── wg0.conf.example            # Plantilla de configuración del servidor
 ├── clients/
-│   ├── setup-windows.ps1       # Setup automático para Windows
-│   └── setup-linux.sh          # Setup automático para Linux
+│   ├── setup-windows.ps1           # Setup automático para Windows
+│   ├── setup-linux.sh              # Setup automático para Linux
+│   └── client.conf.example         # Plantilla de configuración del cliente
 ├── onboarding/
-│   └── add-client.sh           # Registra nuevo peer en el servidor
-└── docs/
-    └── troubleshooting.md      # Problemas conocidos y soluciones
+│   └── add-client.sh               # Registra nuevo peer (modo manual)
+├── panel/                           # Panel web de gestión
+│   ├── docker-compose.yml          # Orquestación de servicios
+│   ├── deploy.sh                   # Script de despliegue
+│   ├── backend/                    # API REST (FastAPI + Python)
+│   │   ├── main.py                 # Endpoints de la API
+│   │   ├── auth.py                 # Autenticación JWT
+│   │   ├── config.py               # Variables de configuración
+│   │   └── wireguard.py            # Lógica de gestión WireGuard
+│   ├── frontend/                   # Dashboard (React)
+│   │   └── src/App.js              # Aplicación principal
+│   └── nginx/
+│       └── nginx.conf              # Proxy reverso
+├── docs/
+│   └── troubleshooting.md          # Problemas conocidos y soluciones
+└── fotos/
+    └── image.png                   # Diagrama de arquitectura
 ```
 
 ---
@@ -178,16 +206,28 @@ sudo wg-quick down wg0 && sudo wg-quick up wg0
 # Ver logs en tiempo real
 sudo journalctl -u wg-quick@wg0 -f
 
-# Eliminar cliente
+# Eliminar cliente manualmente
 sudo wg set wg0 peer <CLAVE_PUBLICA> remove
 sudo wg-quick save wg0
+
+# Ver logs del panel
+sudo docker logs seccion9-api --tail 50
+sudo docker logs seccion9-web --tail 50
+
+# Reiniciar panel
+cd panel/ && sudo docker compose restart
 ```
 
 ---
 
 ## ⚠️ Nota sobre proveedores cloud (Ionos, OVH, Hetzner...)
 
-Muchos proveedores tienen un **firewall externo independiente del UFW** que bloquea el tráfico antes de llegar al sistema operativo. Hay que abrir el puerto UDP 51820 desde el **panel web del proveedor**, no solo desde UFW.
+Muchos proveedores tienen un **firewall externo independiente del UFW** que bloquea el tráfico antes de llegar al sistema operativo. Hay que abrir los siguientes puertos desde el **panel web del proveedor**:
+
+| Protocolo | Puerto | Uso |
+|---|---|---|
+| UDP | 51820 | WireGuard VPN |
+| TCP | 8443 | Panel de gestión web |
 
 Ver [`docs/troubleshooting.md`](docs/troubleshooting.md) para el checklist completo.
 

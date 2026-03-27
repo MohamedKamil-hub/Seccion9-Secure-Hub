@@ -1,0 +1,9 @@
+node_modules/
+build/
+.env
+*.pyc
+__pycache__/
+nginx/certs/
+*.key
+*.pem
+notas.md

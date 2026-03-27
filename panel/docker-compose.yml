@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: ./backend
+    container_name: seccion9-api
+    restart: always
+    network_mode: host
+    volumes:
+      - /etc/wireguard:/etc/wireguard
+      - /var/log/seccion9:/var/log/seccion9
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=CAMBIAME
+      - SECRET_KEY=CAMBIAME
+      - SERVER_PUBLIC_IP=TU_IP_PUBLICA
+      - SERVER_PUBLIC_KEY=TU_CLAVE_PUBLICA_SERVIDOR
+      - SERVER_PORT=51820
+      - WG_INTERFACE=wg0
+      - WG_CONF_PATH=/etc/wireguard/wg0.conf
+      - VPN_SUBNET=10.0.0
+      - CONFIGS_DIR=/etc/wireguard/clientes
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+
+  frontend:
+    build: ./frontend
+    container_name: seccion9-web
+    restart: always
+    ports:
+      - "8443:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
