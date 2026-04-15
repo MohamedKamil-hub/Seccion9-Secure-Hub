@@ -1,0 +1,51 @@
+# ====================== ENTORNO Y SECRETOS ======================
+.env
+*.env
+*.env.*
+
+# ====================== PYTHON / FASTAPI ======================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ====================== DATOS Y LOGS ======================
+*.log
+logs/
+digest.txt
+*.db
+*.sqlite3
+*.sqlite
+
+# ====================== WIREGUARD (nunca subir claves) ======================
+*.key
+*.conf
+wg-*.conf
+privatekey
+publickey
+
+# ====================== FRONTEND ======================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# ====================== TEMPORALES Y EDITOR ======================
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.sublime-*
+
+# ====================== OTROS ======================
+install.sh.bak
+server-stats.sh.bak

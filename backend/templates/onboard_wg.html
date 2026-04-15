@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SECCION9 — VPN Setup: {client_name}</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,sans-serif;background:#0a0e17;color:#e8edf5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}}
+.card{{background:#1a2233;border:1px solid #2a3550;border-radius:16px;padding:40px;max-width:500px;width:100%}}
+.logo{{font-family:monospace;font-size:12px;letter-spacing:3px;color:#3b82f6;margin-bottom:8px}}
+h1{{font-size:20px;margin-bottom:24px}}
+.qr{{text-align:center;margin:20px 0}}
+.qr img{{border-radius:8px;border:1px solid #2a3550;width:200px;height:200px}}
+.steps{{margin:20px 0;font-size:13px;color:#8896b0;line-height:2}}
+.steps b{{color:#e8edf5}}
+.config{{background:#0a0e17;border:1px solid #2a3550;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#8896b0;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;margin:16px 0}}
+.btn{{display:block;width:100%;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;margin-top:12px}}
+.btn:hover{{background:#2563eb}}
+.btn-ghost{{background:transparent;border:1px solid #2a3550;color:#8896b0}}
+.btn-ghost:hover{{background:#1e2a3f;color:#e8edf5}}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="logo">SECCION9</div>
+<h1>VPN Setup: {client_name}</h1>
+<div class="qr"><img src="data:image/png;base64,{qr_b64}" alt="QR"></div>
+<div class="steps">
+<b>1.</b> Install <b>WireGuard</b> on your device<br>
+<b>2.</b> Scan the QR code above, OR download the config file<br>
+<b>3.</b> Activate the tunnel and connect
+</div>
+<a class="btn" href="/api/onboard/{token}/download" download>Download .conf</a>
+<details style="margin-top:16px">
+<summary style="cursor:pointer;font-size:12px;color:#5a6a85">Show raw config</summary>
+<div class="config">{config_escaped}</div>
+</details>
+</div>
+</body>
+</html>
