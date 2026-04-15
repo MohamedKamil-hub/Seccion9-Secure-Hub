@@ -71,11 +71,6 @@ For advanced users, configuration files can be edited located in the `config/` f
 4. Push to the branch.
 5. Open a Pull Request.
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
-## Support Contact
-For support, please contact [MohamedKamil-hub](https://github.com/MohamedKamil-hub).
 
 ## Quick Reference Guide of Concepts
 - **VPN**: Virtual Private Network, a service that encrypts your internet traffic.
